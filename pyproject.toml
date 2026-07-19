@@ -6,11 +6,11 @@ build-backend = "setuptools.build_meta"
 name = "rfd-repoman"
 version = "0.1.0"
 description = "Scoped git and GitHub MCP operations"
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.13"
 dependencies = ["fastmcp>=2.0", "PyGithub>=2.3"]
 
-[project.optional-dependencies]
-test = ["pytest>=8.0"]
+[dependency-groups]
+dev = ["pytest>=8.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
