@@ -75,9 +75,15 @@ def test_github_status_is_read_only():
     source = inspect.getsource(github_status)
     assert ".edit(" not in source and ".create_" not in source and ".delete(" not in source
 
-@pytest.mark.parametrize("func,args", [(github_actions.create_pr, (SimpleNamespace(), "t", "b", "h", "main")), (github_actions.merge_pr, (SimpleNamespace(), 1)), (github_actions.set_visibility, (SimpleNamespace(), True)), (github_actions.delete_remote_branch, (SimpleNamespace(), "topic"))])
-def test_github_write_actions_require_confirmed(func, args):
-    assert "refused" in func(*args)
+def test_github_write_actions_require_confirmed():
+    actions = (
+        (github_actions.create_pr, (SimpleNamespace(), "t", "b", "h", "main")),
+        (github_actions.merge_pr, (SimpleNamespace(), 1)),
+        (github_actions.set_visibility, (SimpleNamespace(), True)),
+        (github_actions.delete_remote_branch, (SimpleNamespace(), "topic")),
+    )
+    for func, args in actions:
+        assert "refused" in func(*args)
 
 
 def test_github_low_consequence_actions_logged_not_gated():
@@ -151,12 +157,8 @@ def test_policy_blocks_below_min_coverage(tmp_path):
 
 def test_override_requires_separate_flag_and_reason(tmp_path):
     repo = _policy_repo(tmp_path, "require_ci_pass: true\n")
-    result = policy.authorize_merge(repo, "main", "failure", None, True, None)
-    assert "override_reason" in result["refused"]
-
-
-def test_override_logged(tmp_path):
-    repo = _policy_repo(tmp_path, "require_ci_pass: true\n")
+    missing_reason = policy.authorize_merge(repo, "main", "failure", None, True, None)
     events = []
     result = policy.authorize_merge(repo, "main", "failure", None, True, "approved exception", events.append)
+    assert "override_reason" in missing_reason["refused"]
     assert result["override"]["reason"] == "approved exception" and events
