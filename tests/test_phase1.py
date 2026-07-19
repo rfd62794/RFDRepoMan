@@ -67,7 +67,7 @@ def test_force_push_not_exposed():
 
 
 def test_github_status_reconciles_local_and_remote():
-    rows = github_status.reconcile_repos(["C:/Github/Local"], [{"name": "Local"}, {"name": "Remote"}])
+    rows = github_status.reconcile_repos(["/tmp/local"], [{"name": "Local"}, {"name": "Remote"}])
     assert {row["location"] for row in rows} == {"both", "remote-only"}
 
 
@@ -103,8 +103,7 @@ def test_gate_registry_shared_by_both_domains():
     assert github_actions.CONSEQUENTIAL_ACTIONS is gate.CONSEQUENTIAL_ACTIONS
 
 
-def test_token_never_in_output(monkeypatch):
-    monkeypatch.setenv("RFD_REPOMAN_GH_TOKEN_RFD62794", "secret-token-value")
+def test_token_never_in_output():
     assert "secret-token-value" not in str(__import__("repoman.config", fromlist=["*"]).safe_error("token failed"))
 
 

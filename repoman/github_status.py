@@ -36,7 +36,7 @@ def list_account_repos(client: Any, include_pr_counts: bool = True) -> list[dict
     return results
 
 
-def github_status(clients: dict[str, Any], root: str = r"C:\Github", include_pr_counts: bool = True, progress: Any = None) -> dict[str, Any]:
+def github_status(clients: dict[str, Any], root: str | None = None, include_pr_counts: bool = True, progress: Any = None) -> dict[str, Any]:
     local = discover_repos(root)
     accounts: dict[str, list[dict[str, Any]]] = {}
     for account, client in clients.items():

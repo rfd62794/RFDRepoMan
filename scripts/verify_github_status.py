@@ -4,13 +4,15 @@ from types import SimpleNamespace
 
 from github import Github, GithubException
 
+from repoman.config import configured_accounts
 from repoman.github_status import github_status
 
 
 def main() -> None:
+    accounts = configured_accounts()
     clients = {
-        account: SimpleNamespace(get_user=lambda account=account: Github(retry=None).get_user(account))
-        for account in ("rfd62794", "ConsumrBuzzy")
+        account.account: SimpleNamespace(get_user=lambda account=account, api=Github(account.token, retry=None): api.get_user(account.account))
+        for account in accounts
     }
     print("Starting public, rate-limit-safe GitHub reconciliation")
     try:

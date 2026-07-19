@@ -11,3 +11,7 @@ venv/
 *.egg-info/
 dist/
 build/
+.env
+.env.*
+!.env.example
+repoman.local.toml
