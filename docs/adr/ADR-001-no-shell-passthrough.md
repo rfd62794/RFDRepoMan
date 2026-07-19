@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-07-19
-- **Decision owners:** RFD IT Services Ltd.
+- **Decision owners:** Project Maintainers
 
 ## Context
 

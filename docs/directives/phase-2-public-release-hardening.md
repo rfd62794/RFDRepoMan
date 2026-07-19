@@ -1,6 +1,6 @@
 # RFDRepoMan — Phase 2 Directive: Public Release Hardening
 
-*July 2026 | RFD IT Services Ltd.*
+*July 2026 | Project Maintainers*
 
 > **STOP:** Run pytest before touching any file. Must report 22 passing, 0 failing, 0 skipped (Phase 1 floor). If count differs, stop and report.
 >
@@ -36,7 +36,7 @@ No account name, organization name, or username appears anywhere in source. Acco
 
 ### `repoman/discover.py`
 
-No path resembling `C:\\Github\\` or another personal-directory convention remains in source, tests, or example configuration.
+No machine-specific or personal-directory convention remains in source, tests, or example configuration.
 
 ### Secret Scan
 

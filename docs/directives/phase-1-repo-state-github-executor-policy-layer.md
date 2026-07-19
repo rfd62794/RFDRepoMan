@@ -1,18 +1,18 @@
 # RFDRepoMan — Phase 1 Directive: Repo State, Git/GitHub Executor & Policy Layer
 
-*July 2026 | RFD IT Services Ltd. | Read fully before executing anything.*
+*July 2026 | Project Maintainers | Read fully before executing anything.*
 
 > **STOP:** This is a new repo. No existing test floor. Create the repo structure first. Report it before writing any code.
 
 ## 0. Context
 
-RFDRepoMan is a standalone MCP server — a "dumb" tool by design. It holds no independent judgment: it reports facts and executes named, scoped actions on request. It never decides when to act; that decision belongs to Claude, invoked deliberately, and to Robert, who confirms anything consequential. Where a project has declared its own quality bar, RepoMan mechanically enforces that project's stated policy and does not invent standards of its own.
+RFDRepoMan is a standalone MCP server — a "dumb" tool by design. It holds no independent judgment: it reports facts and executes named, scoped actions on request. It never decides when to act; that decision belongs to the authorized operator, who confirms anything consequential. Where a project has declared its own quality bar, RepoMan mechanically enforces that project's stated policy and does not invent standards of its own.
 
 This phase delivers:
 
-- Full local repo discovery and status across everything under `C:\Github\`.
+- Full local repo discovery and status across everything under `<repo-root>`.
 - Reconciliation against the `docs/state/current.md` phase/floor convention.
-- GitHub account integration across `rfd62794` and `ConsumrBuzzy`, covering repos, issues, PRs, forks, branches, milestones, and Projects v2.
+- GitHub account integration across operator-configured accounts, covering repos, issues, PRs, forks, branches, milestones, and Projects v2.
 - Full git and GitHub action execution with one shared gate for consequential actions.
 - Read-only CI status and coverage visibility.
 - Per-project, opt-in policy enforcement with a separately flagged override path.
@@ -23,7 +23,7 @@ Deferred: Telegram or other communication integration; autonomous or scheduled i
 
 | File | Status | Action |
 |---|---|---|
-| `repoman/discover.py` | New | Scan `C:\Github\` for `.git` directories. |
+| `repoman/discover.py` | New | Scan `<repo-root>` for `.git` directories. |
 | `repoman/status.py` | New | Branch, clean/dirty, fetched ahead/behind, and latest commit data. |
 | `repoman/state_reader.py` | New | Read phase, certified floor, next work, and optional policy fields from `docs/state/current.md`. |
 | `repoman/git_actions.py` | New | Typed local actions: fetch, fast-forward-only pull, commit, push, branch create, checkout, and merge. |
@@ -113,7 +113,7 @@ GitLab and Bitbucket stubs match the GitHub status interface shape. Every method
 
 ### `repoman/config.py`
 
-Read tokens exclusively from `RFD_REPOMAN_GH_TOKEN_RFD62794` and `RFD_REPOMAN_GH_TOKEN_CONSUMRBUZZY`. Never hardcode, log, return, or include a token or partial token in error output.
+Read tokens exclusively from account-specific environment variables. Never hardcode, log, return, or include a token or partial token in error output.
 
 ## 3. Test Anchors
 
@@ -160,10 +160,10 @@ Target: 22 passing, 0 failing, 0 skipped. Mock real git and GitHub calls in test
 
 | Fact | Value |
 |---|---|
-| Local scope | Everything under `C:\Github\` |
-| GitHub accounts | `rfd62794`, `ConsumrBuzzy` |
+| Local scope | Everything under `<repo-root>` |
+| GitHub accounts | Operator-configured accounts |
 | Interface | MCP only |
-| Judgment location | Claude and Robert, never RepoMan |
+| Judgment location | Authorized operators, never RepoMan |
 | Gated | `push`, `merge`, `merge_pr`, `create_pr`, `set_visibility`, `delete_remote_branch` |
 | Logged, ungated | PR comments/reviews/closure, forks, remote branch creation, issues, milestones, and Projects status actions |
 | Policy | Per-project opt-in through `current.md`; silence means report-only |
@@ -171,4 +171,4 @@ Target: 22 passing, 0 failing, 0 skipped. Mock real git and GitHub calls in test
 | Never exposed | Force push and raw shell passthrough |
 | Stubbed only | GitLab and Bitbucket |
 
-*RFD IT Services Ltd. | RFDRepoMan Phase 1 | Spec first. Test floor always real. No judgment in the tool — only in the humans and the AI operating it.*
+*Project Maintainers | RFDRepoMan Phase 1 | Spec first. Test floor always real. No judgment in the tool — only in authorized operators.*
