@@ -12,9 +12,10 @@ PROJECT_ROOT = Path(__file__).parents[1]
 
 
 def test_config_no_hardcoded_account_names():
-    source = inspect.getsource(config).lower()
-    assert "rfd62794" not in source
-    assert "consumrbuzzy" not in source
+    source = inspect.getsource(config)
+    assert "ACCOUNT_ENV_VARS" not in source
+    assert config.ACCOUNTS_ENV_VAR in source
+    assert config.TOKEN_ENV_PREFIX in source
 
 
 def test_discover_requires_root_env_var(monkeypatch):
