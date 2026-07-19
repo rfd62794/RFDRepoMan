@@ -14,7 +14,8 @@ def _run(*args: str, cwd: Path) -> None:
 
 
 def test_verify_floor_returns_real_output(tmp_path):
-    (tmp_path / "pyproject.toml").write_text('[project]\nname = "fixture"\nversion = "0.0.0"\nrequires-python = ">=3.12"\n')
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "fixture"\nversion = "0.0.0"\nrequires-python = ">=3.12"\n\n[dependency-groups]\ndev = ["pytest>=9.1"]\n')
+    _run("uv", "lock", cwd=tmp_path)
     tests = tmp_path / "tests"
     tests.mkdir()
     (tests / "test_failure.py").write_text("def test_failure():\n    assert False\n")

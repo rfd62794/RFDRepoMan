@@ -9,6 +9,7 @@ from typing import Any
 
 from repoman.git_actions import merge, push
 from repoman.policy import authorize_merge
+from repoman.toolchain import detect_toolchain
 
 
 SCENARIOS = {"unconfirmed_push", "unconfirmed_merge", "policy_override_cycle"}
@@ -29,10 +30,13 @@ def _pytest_counts(output: str) -> dict[str, int] | None:
 
 
 def verify_floor(repo: str | Path) -> dict[str, Any]:
+    detection = detect_toolchain(repo)
+    if detection["toolchain"] != "uv":
+        return {"toolchain": detection, "status": "unsupported_toolchain", "stdout": "", "stderr": "", "return_code": None, "parsed": False, "counts": None}
     result = _run(repo, "uv", "run", "pytest", "-q")
     output = result.stdout
     counts = _pytest_counts(output)
-    return {"stdout": output, "stderr": result.stderr, "return_code": result.returncode, "parsed": counts is not None, "counts": counts}
+    return {"toolchain": detection, "stdout": output, "stderr": result.stderr, "return_code": result.returncode, "parsed": counts is not None, "counts": counts}
 
 
 def verify_git_clean(repo: str | Path) -> dict[str, Any]:
