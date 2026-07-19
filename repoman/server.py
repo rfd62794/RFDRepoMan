@@ -14,6 +14,7 @@ from repoman.github_status import github_status, list_forks, list_prs, list_remo
 from repoman.phase_bridge import reconcile_phase
 from repoman.state_reader import read_state
 from repoman.status import repo_status
+from repoman.self_verify import verify_floor, verify_git_clean, verify_manual_proof
 
 mcp = FastMCP("RFDRepoMan")
 
@@ -148,6 +149,18 @@ def ci_check_branch_protection(repo: Any, branch: str = "main") -> dict[str, obj
 @mcp.tool(name="state_read")
 def state_read(repo: str | Path) -> dict[str, Any]:
     return read_state(repo)
+
+@mcp.tool(name="verify_floor")
+def verify_floor_tool(repo: str | Path) -> dict[str, Any]:
+    return verify_floor(repo)
+
+@mcp.tool(name="verify_git_clean")
+def verify_git_clean_tool(repo: str | Path) -> dict[str, Any]:
+    return verify_git_clean(repo)
+
+@mcp.tool(name="verify_manual_proof")
+def verify_manual_proof_tool(repo: str | Path, scenario: str) -> dict[str, Any]:
+    return verify_manual_proof(repo, scenario)
 
 def main() -> None:
     mcp.run()
