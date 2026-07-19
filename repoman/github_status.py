@@ -21,13 +21,30 @@ def reconcile_repos(local_repos: list[str], remote_repos: list[dict[str, Any]]) 
     return results
 
 
-def list_account_repos(client: Any) -> list[dict[str, Any]]:
-    return [{"name": repo.name, "full_name": repo.full_name, "visibility": getattr(repo, "visibility", "private"), "stars": repo.stargazers_count, "open_issues": repo.open_issues_count, "open_prs": repo.get_pulls(state="open").totalCount, "default_branch": repo.default_branch} for repo in client.get_user().get_repos()]
+def list_account_repos(client: Any, include_pr_counts: bool = True) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
+    for repo in client.get_user().get_repos():
+        results.append({
+            "name": repo.name,
+            "full_name": repo.full_name,
+            "visibility": getattr(repo, "visibility", "private"),
+            "stars": repo.stargazers_count,
+            "open_issues": repo.open_issues_count,
+            "open_prs": repo.get_pulls(state="open").totalCount if include_pr_counts else "unavailable: public rate-limit-safe scan",
+            "default_branch": repo.default_branch,
+        })
+    return results
 
 
-def github_status(clients: dict[str, Any], root: str = r"C:\Github") -> dict[str, Any]:
+def github_status(clients: dict[str, Any], root: str = r"C:\Github", include_pr_counts: bool = True, progress: Any = None) -> dict[str, Any]:
     local = discover_repos(root)
-    accounts = {account: reconcile_repos(local, list_account_repos(client)) for account, client in clients.items()}
+    accounts: dict[str, list[dict[str, Any]]] = {}
+    for account, client in clients.items():
+        if progress:
+            progress(f"Scanning GitHub account: {account}")
+        accounts[account] = reconcile_repos(local, list_account_repos(client, include_pr_counts))
+        if progress:
+            progress(f"Completed GitHub account: {account} ({len(accounts[account])} reconciled repositories)")
     return {"accounts": accounts, "configured_accounts": [item.account for item in configured_accounts()]}
 
 
