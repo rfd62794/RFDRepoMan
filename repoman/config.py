@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass
 
@@ -32,11 +33,21 @@ def configured_account_names() -> list[str]:
     return [account.strip() for account in raw_accounts.split(",") if account.strip()]
 
 
+def _redact_diagnostic(value: str) -> str:
+    return re.sub(r"gh[ops]_[A-Za-z0-9_]+", "[redacted]", value.replace("\n", " ").strip())[:500]
+
+
 def _gh(command: list[str], timeout: float = GH_SUBPROCESS_TIMEOUT_SECONDS) -> subprocess.CompletedProcess[str]:
+    command_name = " ".join(command[:3])
+    executable = shutil.which("gh")
     try:
-        return subprocess.run(command, capture_output=True, text=True, check=False, timeout=timeout)
+        result = subprocess.run(command, capture_output=True, text=True, check=False, timeout=timeout)
     except subprocess.TimeoutExpired:
+        LOGGER.warning("GitHub CLI diagnostic: command=%s timed out after %ss executable=%s", command_name, timeout, executable)
         return subprocess.CompletedProcess(command, 1, "", "")
+    if result.returncode != 0:
+        LOGGER.warning("GitHub CLI diagnostic: command=%s return_code=%s executable=%s stderr=%s", command_name, result.returncode, executable, _redact_diagnostic(result.stderr))
+    return result
 
 
 def _active_gh_account() -> str | None:

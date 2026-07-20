@@ -55,6 +55,7 @@ def github_status(clients: dict[str, Any], root: str | None = None, include_pr_c
 
 
 NETWORK_TIMEOUT_SECONDS = 8
+DISCOVERY_TIMEOUT_SECONDS = 15
 DEFAULT_ACCOUNT_BUDGET_SECONDS = 25
 REPOSITORY_PAGE_SIZE = 100
 
@@ -102,7 +103,7 @@ def _cached_account_result(account_name: str, local_repos: list[str], force_refr
 def reconcile_status_for_accounts(account_names: list[str], root: str | Path | None = None, include_pr_counts: bool = False, force_refresh: bool = False, per_account_budget_seconds: float = DEFAULT_ACCOUNT_BUDGET_SECONDS, global_budget_seconds: float | None = None) -> dict[str, Any]:
     applied_global_budget = global_budget_seconds if global_budget_seconds is not None else per_account_budget_seconds * len(account_names) + 15
     started_global = monotonic()
-    discovery_completed, discovered = _within_timeout(lambda: discover_repos(root), min(NETWORK_TIMEOUT_SECONDS, applied_global_budget))
+    discovery_completed, discovered = _within_timeout(lambda: discover_repos(root), min(DISCOVERY_TIMEOUT_SECONDS, applied_global_budget))
     local_repos = discovered if discovery_completed else []
     accounts: dict[str, Any] = {}
     for account_name in account_names:

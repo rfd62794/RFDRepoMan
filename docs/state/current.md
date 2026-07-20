@@ -1,4 +1,4 @@
-phase: Phase 11 diagnostics complete; live MCP root cause unconfirmed
-certified_floor: 71 passing, 0 failing, 0 skipped
-what_is_next: Compare diagnostics from the restarted live Claude Desktop stdio process before scoping remediation; complete outstanding live reconciliation and Phase 6 browser validation.
-visibility_status: Public release ready. Configured-stdio-equivalent and normal-terminal launches both resolved `gh` and completed `gh auth status`; `C:\Github` discovery consumed about 6.6 to 6.7 seconds. No production code changed in Phase 11.
+phase: Phase 12 implemented; live credential diagnostics pending
+certified_floor: 74 passing, 0 failing, 0 skipped
+what_is_next: Restart Claude Desktop, reproduce fallback resolution, and inspect secret-safe GitHub CLI diagnostic logs; complete outstanding live reconciliation and Phase 6 browser validation.
+visibility_status: Public release ready. Discovery has a dedicated 15-second bound; GitHub CLI fallback logs fixed command identity, executable resolution, return code or timeout, and redacted stderr without logging token output.
