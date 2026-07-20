@@ -10,7 +10,7 @@ from repoman.server import mcp
 
 def test_reconcile_no_client_object_param():
     signature = inspect.signature(github_status.reconcile_status_for_accounts)
-    assert tuple(signature.parameters) == ("account_names", "root", "include_pr_counts", "force_refresh", "per_account_budget_seconds")
+    assert tuple(signature.parameters) == ("account_names", "root", "include_pr_counts", "force_refresh", "per_account_budget_seconds", "global_budget_seconds")
     assert all(parameter.annotation is not object for parameter in signature.parameters.values())
 
 
