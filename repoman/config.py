@@ -1,11 +1,16 @@
 """Environment-only GitHub configuration."""
 from __future__ import annotations
 
+import logging
 import os
+import re
+import subprocess
 from dataclasses import dataclass
 
 ACCOUNTS_ENV_VAR = "RFD_REPOMAN_ACCOUNTS"
 TOKEN_ENV_PREFIX = "RFD_REPOMAN_GH_TOKEN_"
+GH_FALLBACK_ENV_VAR = "RFD_REPOMAN_ALLOW_GH_FALLBACK"
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -26,10 +31,37 @@ def configured_account_names() -> list[str]:
     return [account.strip() for account in raw_accounts.split(",") if account.strip()]
 
 
+def _gh(command: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(command, capture_output=True, text=True, check=False)
+
+
+def _active_gh_account() -> str | None:
+    result = _gh(["gh", "auth", "status", "--hostname", "github.com", "--active"])
+    match = re.search(r"account\s+([^\s(]+)", f"{result.stdout}\n{result.stderr}", re.IGNORECASE)
+    return match.group(1) if result.returncode == 0 and match else None
+
+
+def resolve_token(account_name: str) -> tuple[str | None, str]:
+    token = os.getenv(token_env_var(account_name))
+    if token:
+        return token, "env"
+    if os.getenv(GH_FALLBACK_ENV_VAR, "").lower() != "true":
+        return None, "none"
+    if _active_gh_account() != account_name:
+        return None, "gh_account_mismatch"
+    result = _gh(["gh", "auth", "token", "--hostname", "github.com"])
+    token = result.stdout.strip() if result.returncode == 0 else ""
+    if not token:
+        return None, "none"
+    LOGGER.warning("Using explicit gh CLI credential fallback for account %s; credential scope may exceed RepoMan's declared minimum.", account_name)
+    return token, "gh_fallback"
+
+
 def get_account_config(account: str) -> AccountConfig:
     if account not in configured_account_names():
         raise ValueError("Account is not configured")
-    return AccountConfig(account=account, token=os.getenv(token_env_var(account)))
+    token, _ = resolve_token(account)
+    return AccountConfig(account=account, token=token)
 
 
 def configured_accounts() -> list[AccountConfig]:
