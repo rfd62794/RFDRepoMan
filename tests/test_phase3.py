@@ -23,6 +23,7 @@ from repoman.server import (
 from repoman.state_reader import read_state
 from repoman.status import repo_status
 from repoman.self_verify import verify_floor, verify_git_clean, verify_manual_proof
+from repoman.token_setup import generate_token_url
 
 
 EXPECTED_TOOLS = {
@@ -31,7 +32,7 @@ EXPECTED_TOOLS = {
     "github_list_prs", "github_list_forks", "github_list_remote_branches", "github_reconcile_status",
     "github_create_milestone", "github_close_milestone", "github_link_issue_to_milestone", "github_update_project_status", "phase_bridge_check",
     "ci_list_workflow_runs", "ci_get_latest_status", "ci_read_coverage", "ci_check_branch_protection", "state_read",
-    "verify_floor", "verify_git_clean", "verify_manual_proof",
+    "verify_floor", "verify_git_clean", "verify_manual_proof", "generate_token_setup_url",
 }
 
 
@@ -46,7 +47,7 @@ def test_all_tested_functions_registered():
         github_status.list_prs, github_status.list_forks, github_status.list_remote_branches, github_status.github_status,
         github_planning.github_create_milestone, github_planning.github_close_milestone, github_planning.github_link_issue_to_milestone, github_planning.github_update_project_status,
         reconcile_phase, list_workflow_runs, get_latest_ci_status, read_coverage_report, check_branch_protection, read_state, repo_status,
-        verify_floor, verify_git_clean, verify_manual_proof,
+        verify_floor, verify_git_clean, verify_manual_proof, generate_token_url,
     }
     assert len(tested_functions) == len(EXPECTED_TOOLS)
     assert EXPECTED_TOOLS <= tool_names()

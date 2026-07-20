@@ -15,6 +15,7 @@ from repoman.phase_bridge import reconcile_phase
 from repoman.state_reader import read_state
 from repoman.status import repo_status
 from repoman.self_verify import verify_floor, verify_git_clean, verify_manual_proof
+from repoman.token_setup import generate_token_url
 
 mcp = FastMCP("RFDRepoMan")
 
@@ -161,6 +162,10 @@ def verify_git_clean_tool(repo: str | Path) -> dict[str, Any]:
 @mcp.tool(name="verify_manual_proof")
 def verify_manual_proof_tool(repo: str | Path, scenario: str) -> dict[str, Any]:
     return verify_manual_proof(repo, scenario)
+
+@mcp.tool(name="generate_token_setup_url")
+def generate_token_setup_url(account_name: str, token_name: str = "RFDRepoMan") -> str:
+    return generate_token_url(account_name, token_name)
 
 def main() -> None:
     mcp.run()
