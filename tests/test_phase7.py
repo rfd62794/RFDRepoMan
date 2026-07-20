@@ -28,7 +28,7 @@ def test_fallback_used_when_explicitly_enabled(monkeypatch):
     monkeypatch.setenv(config.GH_FALLBACK_ENV_VAR, "true")
     monkeypatch.delenv(config.token_env_var("example-account"), raising=False)
     responses = iter((_result(["gh"], stderr="Logged in to github.com account example-account (keyring)\n"), _result(["gh"], stdout="fallback-token\n")))
-    monkeypatch.setattr(config, "_gh", lambda command: next(responses))
+    monkeypatch.setattr(config, "_gh", lambda command, timeout=None: next(responses))
     assert config.resolve_token("example-account") == ("fallback-token", "gh_fallback")
 
 
@@ -36,7 +36,7 @@ def test_fallback_rejects_account_mismatch(monkeypatch):
     monkeypatch.setenv(config.GH_FALLBACK_ENV_VAR, "true")
     monkeypatch.delenv(config.token_env_var("requested-account"), raising=False)
     calls = []
-    monkeypatch.setattr(config, "_gh", lambda command: calls.append(command) or _result(command, stderr="Logged in to github.com account active-account (keyring)\n"))
+    monkeypatch.setattr(config, "_gh", lambda command, timeout=None: calls.append(command) or _result(command, stderr="Logged in to github.com account active-account (keyring)\n"))
     assert config.resolve_token("requested-account") == (None, "gh_account_mismatch")
     assert len(calls) == 1
 
@@ -45,7 +45,7 @@ def test_fallback_use_is_logged(monkeypatch, caplog):
     monkeypatch.setenv(config.GH_FALLBACK_ENV_VAR, "true")
     monkeypatch.delenv(config.token_env_var("example-account"), raising=False)
     responses = iter((_result(["gh"], stderr="account example-account\n"), _result(["gh"], stdout="fallback-token\n")))
-    monkeypatch.setattr(config, "_gh", lambda command: next(responses))
+    monkeypatch.setattr(config, "_gh", lambda command, timeout=None: next(responses))
     with caplog.at_level(logging.WARNING, logger="repoman.config"):
         config.resolve_token("example-account")
     assert "example-account" in caplog.text
@@ -58,7 +58,7 @@ def test_gh_invoked_with_fixed_args_only(monkeypatch):
     monkeypatch.delenv(config.token_env_var("example-account"), raising=False)
     commands = []
     responses = iter((_result(["gh"], stderr="account example-account\n"), _result(["gh"], stdout="fallback-token\n")))
-    monkeypatch.setattr(config, "_gh", lambda command: commands.append(command) or next(responses))
+    monkeypatch.setattr(config, "_gh", lambda command, timeout=None: commands.append(command) or next(responses))
     config.resolve_token("example-account")
     assert commands == [
         ["gh", "auth", "status", "--hostname", "github.com", "--active"],
