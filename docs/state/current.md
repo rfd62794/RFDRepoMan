@@ -1,4 +1,4 @@
-phase: Phase 8 implemented; live MCP reconciliation validation pending
-certified_floor: 57 passing, 0 failing, 0 skipped
-what_is_next: Verify the safe `github_reconcile_status` MCP tool with a credentialed account and an unavailable-credential account; complete the outstanding Phase 6 browser validation.
-visibility_status: Public release ready. MCP reconciliation and phase bridge tools now construct bounded, account-verified clients internally; environment tokens remain preferred and GitHub CLI fallback remains explicit and logged.
+phase: Phase 9 implemented; live bounded reconciliation validation pending
+certified_floor: 65 passing, 0 failing, 0 skipped
+what_is_next: Verify live bounded reconciliation for both accounts, a tiny-budget cached call, and the outstanding Phase 6 browser validation.
+visibility_status: Public release ready. Reconciliation paginates with an 8-second request timeout, 25-second account budget, and gitignored two-snapshot cache; daemon-thread timeout returns control to the caller but cannot cancel in-flight HTTP work.
