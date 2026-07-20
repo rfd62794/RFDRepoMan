@@ -93,10 +93,23 @@ def _repo_summary(repo: Any, include_pr_counts: bool) -> dict[str, Any]:
     }
 
 
-def reconcile_status_for_accounts(account_names: list[str], root: str | Path | None = None, include_pr_counts: bool = False, force_refresh: bool = False, per_account_budget_seconds: float = DEFAULT_ACCOUNT_BUDGET_SECONDS) -> dict[str, Any]:
-    local_repos = discover_repos(root)
+def _cached_account_result(account_name: str, local_repos: list[str], force_refresh: bool) -> dict[str, Any]:
+    cache = begin_snapshot(account_name)
+    fallback = [] if force_refresh else cached_repos(cache)
+    return {"repos": reconcile_repos(local_repos, fallback), "truncated": True, "freshly_fetched": 0, "cache_backfilled": len(fallback)}
+
+
+def reconcile_status_for_accounts(account_names: list[str], root: str | Path | None = None, include_pr_counts: bool = False, force_refresh: bool = False, per_account_budget_seconds: float = DEFAULT_ACCOUNT_BUDGET_SECONDS, global_budget_seconds: float | None = None) -> dict[str, Any]:
+    applied_global_budget = global_budget_seconds if global_budget_seconds is not None else per_account_budget_seconds * len(account_names) + 15
+    started_global = monotonic()
+    discovery_completed, discovered = _within_timeout(lambda: discover_repos(root), min(NETWORK_TIMEOUT_SECONDS, applied_global_budget))
+    local_repos = discovered if discovery_completed else []
     accounts: dict[str, Any] = {}
     for account_name in account_names:
+        global_remaining = applied_global_budget - (monotonic() - started_global)
+        if global_remaining <= 0:
+            accounts[account_name] = _cached_account_result(account_name, local_repos, force_refresh)
+            continue
         token, _ = resolve_token(account_name)
         if not token:
             accounts[account_name] = {"error": "no_credential_available", "account": account_name}
@@ -107,15 +120,14 @@ def reconcile_status_for_accounts(account_names: list[str], root: str | Path | N
         truncated = False
         page = 0
         client = _github_client(token)
-        while monotonic() - started < per_account_budget_seconds:
-            remaining = per_account_budget_seconds - (monotonic() - started)
+        account_budget = min(per_account_budget_seconds, global_remaining)
+        while monotonic() - started < account_budget and monotonic() - started_global < applied_global_budget:
+            remaining = min(account_budget - (monotonic() - started), applied_global_budget - (monotonic() - started_global))
             completed, result = _within_timeout(lambda: list(client.get_user().get_repos(per_page=REPOSITORY_PAGE_SIZE).get_page(page)), min(NETWORK_TIMEOUT_SECONDS, remaining))
-            if not completed:
-                truncated = True
+            if not completed or not result:
+                truncated = not completed
                 break
-            if not result:
-                break
-            remaining = per_account_budget_seconds - (monotonic() - started)
+            remaining = min(account_budget - (monotonic() - started), applied_global_budget - (monotonic() - started_global))
             if remaining <= 0:
                 truncated = True
                 break
@@ -130,18 +142,12 @@ def reconcile_status_for_accounts(account_names: list[str], root: str | Path | N
                 break
         else:
             truncated = True
-        if monotonic() - started >= per_account_budget_seconds:
+        if monotonic() - started >= account_budget or monotonic() - started_global >= applied_global_budget:
             truncated = True
         live_names = {repo["name"].lower() for repo in live_repos}
         fallback = [] if force_refresh else [repo for repo in cached_repos(cache) if repo["name"].lower() not in live_names]
-        remotes = fallback + live_repos
-        accounts[account_name] = {
-            "repos": reconcile_repos(local_repos, remotes),
-            "truncated": truncated,
-            "freshly_fetched": len(live_repos),
-            "cache_backfilled": len(fallback),
-        }
-    return {"accounts": accounts, "configured_accounts": account_names}
+        accounts[account_name] = {"repos": reconcile_repos(local_repos, fallback + live_repos), "truncated": truncated, "freshly_fetched": len(live_repos), "cache_backfilled": len(fallback)}
+    return {"accounts": accounts, "configured_accounts": account_names, "global_budget_seconds": applied_global_budget, "discovery_timed_out": not discovery_completed}
 
 
 def list_prs(repo: Any, state: str = "open") -> list[dict[str, Any]]:

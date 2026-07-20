@@ -10,6 +10,7 @@ from dataclasses import dataclass
 ACCOUNTS_ENV_VAR = "RFD_REPOMAN_ACCOUNTS"
 TOKEN_ENV_PREFIX = "RFD_REPOMAN_GH_TOKEN_"
 GH_FALLBACK_ENV_VAR = "RFD_REPOMAN_ALLOW_GH_FALLBACK"
+GH_SUBPROCESS_TIMEOUT_SECONDS = 5
 LOGGER = logging.getLogger(__name__)
 
 
@@ -31,12 +32,15 @@ def configured_account_names() -> list[str]:
     return [account.strip() for account in raw_accounts.split(",") if account.strip()]
 
 
-def _gh(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, capture_output=True, text=True, check=False)
+def _gh(command: list[str], timeout: float = GH_SUBPROCESS_TIMEOUT_SECONDS) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(command, capture_output=True, text=True, check=False, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(command, 1, "", "")
 
 
 def _active_gh_account() -> str | None:
-    result = _gh(["gh", "auth", "status", "--hostname", "github.com", "--active"])
+    result = _gh(["gh", "auth", "status", "--hostname", "github.com", "--active"], GH_SUBPROCESS_TIMEOUT_SECONDS)
     match = re.search(r"account\s+([^\s(]+)", f"{result.stdout}\n{result.stderr}", re.IGNORECASE)
     return match.group(1) if result.returncode == 0 and match else None
 
@@ -47,9 +51,12 @@ def resolve_token(account_name: str) -> tuple[str | None, str]:
         return token, "env"
     if os.getenv(GH_FALLBACK_ENV_VAR, "").lower() != "true":
         return None, "none"
-    if _active_gh_account() != account_name:
+    active_account = _active_gh_account()
+    if active_account is None:
+        return None, "none"
+    if active_account != account_name:
         return None, "gh_account_mismatch"
-    result = _gh(["gh", "auth", "token", "--hostname", "github.com"])
+    result = _gh(["gh", "auth", "token", "--hostname", "github.com"], GH_SUBPROCESS_TIMEOUT_SECONDS)
     token = result.stdout.strip() if result.returncode == 0 else ""
     if not token:
         return None, "none"
