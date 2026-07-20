@@ -15,3 +15,4 @@ build/
 .env.*
 !.env.example
 repoman.local.toml
+.repoman_cache/

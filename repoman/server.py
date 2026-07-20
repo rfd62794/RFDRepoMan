@@ -108,8 +108,8 @@ def github_list_remote_branches(repo: Any) -> list[str]:
     return list_remote_branches(repo)
 
 @mcp.tool(name="github_reconcile_status")
-def github_reconcile_status(account_names: list[str], root: str | Path | None = None, include_pr_counts: bool = True) -> dict[str, Any]:
-    return reconcile_status_for_accounts(account_names, root, include_pr_counts)
+def github_reconcile_status(account_names: list[str], root: str | Path | None = None, include_pr_counts: bool = False, force_refresh: bool = False, per_account_budget_seconds: float = 25) -> dict[str, Any]:
+    return reconcile_status_for_accounts(account_names, root, include_pr_counts, force_refresh, per_account_budget_seconds)
 
 @mcp.tool(name="github_create_milestone")
 def github_create_milestone_tool(repo: Any, title: str, description: str = "", audit: Any = None) -> dict[str, object]:
