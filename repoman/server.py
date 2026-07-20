@@ -10,8 +10,8 @@ from repoman.ci_status import check_branch_protection, get_latest_ci_status, lis
 from repoman.git_actions import checkout, commit, create_branch, fetch, merge, pull, push
 from repoman.github_actions import add_pr_comment, close_issue, close_pr, create_fork, create_issue, create_pr, delete_remote_branch, github_create_branch, merge_pr, request_pr_review, set_visibility
 from repoman.github_planning import github_close_milestone, github_create_milestone, github_link_issue_to_milestone, github_update_project_status
-from repoman.github_status import github_status, list_forks, list_prs, list_remote_branches
-from repoman.phase_bridge import reconcile_phase
+from repoman.github_status import list_forks, list_prs, list_remote_branches, reconcile_status_for_accounts
+from repoman.phase_bridge import phase_bridge_check_by_name
 from repoman.state_reader import read_state
 from repoman.status import repo_status
 from repoman.self_verify import verify_floor, verify_git_clean, verify_manual_proof
@@ -108,8 +108,8 @@ def github_list_remote_branches(repo: Any) -> list[str]:
     return list_remote_branches(repo)
 
 @mcp.tool(name="github_reconcile_status")
-def github_reconcile_status(clients: dict[str, Any], root: str | None = None, include_pr_counts: bool = True, progress: Any = None) -> dict[str, Any]:
-    return github_status(clients, root, include_pr_counts, progress)
+def github_reconcile_status(account_names: list[str], root: str | Path | None = None, include_pr_counts: bool = True) -> dict[str, Any]:
+    return reconcile_status_for_accounts(account_names, root, include_pr_counts)
 
 @mcp.tool(name="github_create_milestone")
 def github_create_milestone_tool(repo: Any, title: str, description: str = "", audit: Any = None) -> dict[str, object]:
@@ -128,8 +128,8 @@ def github_update_project_status_tool(project: Any, item_id: str, status_field_i
     return github_update_project_status(project, item_id, status_field_id, status_option_id, audit)
 
 @mcp.tool(name="phase_bridge_check")
-def phase_bridge_check(repo_path: str | Path, github_repo: Any) -> dict[str, object]:
-    return reconcile_phase(repo_path, github_repo)
+def phase_bridge_check(repo_path: str | Path, github_repo_name: str, account_name: str) -> dict[str, object]:
+    return phase_bridge_check_by_name(repo_path, github_repo_name, account_name)
 
 @mcp.tool(name="ci_list_workflow_runs")
 def ci_list_workflow_runs(repo: Any) -> list[dict[str, object]]:

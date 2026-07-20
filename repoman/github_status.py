@@ -2,9 +2,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from queue import Queue
+from threading import Thread
+from typing import Any, Callable
 
-from repoman.config import configured_accounts
+from github import Github
+
+from repoman.config import configured_accounts, resolve_token
 from repoman.discover import discover_repos
 
 
@@ -46,6 +50,45 @@ def github_status(clients: dict[str, Any], root: str | None = None, include_pr_c
         if progress:
             progress(f"Completed GitHub account: {account} ({len(accounts[account])} reconciled repositories)")
     return {"accounts": accounts, "configured_accounts": [item.account for item in configured_accounts()]}
+
+
+NETWORK_TIMEOUT_SECONDS = 15
+
+
+def _within_timeout(operation: Callable[[], Any], timeout: float = NETWORK_TIMEOUT_SECONDS) -> tuple[bool, Any]:
+    results: Queue[tuple[bool, Any]] = Queue(maxsize=1)
+
+    def run() -> None:
+        try:
+            results.put((True, operation()))
+        except Exception as error:
+            results.put((False, error))
+
+    thread = Thread(target=run, daemon=True)
+    thread.start()
+    thread.join(timeout)
+    if thread.is_alive():
+        return False, TimeoutError("GitHub reconciliation timed out")
+    return results.get()
+
+
+def _github_client(token: str) -> Github:
+    return Github(token, timeout=NETWORK_TIMEOUT_SECONDS, retry=None)
+
+
+def reconcile_status_for_accounts(account_names: list[str], root: str | Path | None = None, include_pr_counts: bool = True) -> dict[str, Any]:
+    accounts: dict[str, Any] = {}
+    for account_name in account_names:
+        token, _ = resolve_token(account_name)
+        if not token:
+            accounts[account_name] = {"error": "no_credential_available", "account": account_name}
+            continue
+        completed, result = _within_timeout(lambda: github_status({account_name: _github_client(token)}, root, include_pr_counts), NETWORK_TIMEOUT_SECONDS)
+        if not completed:
+            accounts[account_name] = {"error": "timeout" if isinstance(result, TimeoutError) else "reconciliation_failed", "account": account_name, "message": str(result)}
+            continue
+        accounts[account_name] = result["accounts"][account_name]
+    return {"accounts": accounts, "configured_accounts": account_names}
 
 
 def list_prs(repo: Any, state: str = "open") -> list[dict[str, Any]]:
