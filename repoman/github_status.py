@@ -7,7 +7,7 @@ from threading import Thread
 from time import monotonic
 from typing import Any, Callable
 
-from github import Github
+from github import Auth, Github
 
 from repoman.config import configured_accounts, resolve_token
 from repoman.discover import discover_repos
@@ -78,7 +78,7 @@ def _within_timeout(operation: Callable[[], Any], timeout: float = NETWORK_TIMEO
 
 
 def _github_client(token: str) -> Github:
-    return Github(token, timeout=NETWORK_TIMEOUT_SECONDS, retry=None)
+    return Github(auth=Auth.Token(token), timeout=NETWORK_TIMEOUT_SECONDS, retry=None)
 
 
 def _repo_summary(repo: Any, include_pr_counts: bool) -> dict[str, Any]:
